@@ -85,7 +85,7 @@ app.use(express.static(__dirname + '/../client/dist'))
 
 // API Routes
 app.get('/', (req, res) => {
-  // send the index.html file
+  // static preact bundle
   res.sendFile(__dirname + '/../client/dist/index.html')
 })
 
@@ -105,6 +105,13 @@ app.post('/download', jsonParser, (req, res) => {
     console.log("Format: " + format);
     console.log("UID: " + uid);
     console.log("")
+
+    // Check & convert youtu.be url
+    // the first 17 characters of the url would be https://youtu.be/
+    let url_first_17 = url.substring(0, 17);
+    if (url_first_17 == "https://youtu.be/") {
+      url = url.replace("https://youtu.be/", "https://www.youtube.com/watch?v=");
+    }
 
     // Validate user input and return error if invalid
     if (url == null || url == "" || url == undefined || url.length < 1 || url.length > 100) {
