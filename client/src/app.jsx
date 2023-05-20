@@ -3,6 +3,9 @@ import { useState } from 'preact/hooks';
 import { Video } from './components/video.jsx';
 import './style.css';
 
+const ip = "192.168.0.18";
+const port = "3000";
+
 console.log("Example Video URL:     https://www.youtube.com/watch?v=jNQXAC9IVRw")
 
 export function App() {
@@ -21,7 +24,7 @@ export function App() {
     }
 
     // send the user input to the API
-    const response = await fetch('http://127.0.0.1:3000/download', {
+    const response = await fetch(`http://${ip}:${port}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

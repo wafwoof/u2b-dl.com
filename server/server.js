@@ -1,3 +1,5 @@
+`use strict`;
+
 const express = require('express')
 var bodyParser = require('body-parser')
 const rateLimit = require("express-rate-limit");
@@ -14,7 +16,13 @@ const date = require('date-and-time');
 const sqlite3 = require('sqlite3').verbose();
 const cron = require('node-cron');
 const app = express()
-const port = 3000
+// Get local IP address
+const { networkInterfaces } = require('os');
+const nets = networkInterfaces();
+const results = Object.create(null); // Or just '{}', an empty object
+
+const ip = "192.168.0.18";
+const port = 3000;
 
 console.log("Loading...")
 const startup_time = new Date();
@@ -42,7 +50,7 @@ db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='downloaded_v
 
 // Every 5 minutes: delete all videos older than 15 minutes
 cron.schedule('*/5 * * * *', () => {
-  console.log("Cron Job: Deleting all videos older than 15 minutes... Every 1 minute...")
+  console.log("Cron Job: Deleting all videos older than 15 minutes... Every 5 minutes...")
   db.all("SELECT * FROM downloaded_videos", (err, rows) => {
     if (err) {
       console.error(err.message);
@@ -86,12 +94,12 @@ app.post('/download', jsonParser, (req, res) => {
     let url = req.body.url;
     let format = req.body.format;
     // get client information
-    let ip = req.socket.remoteAddress
+    let user_ip = req.socket.remoteAddress
     let ua = req.headers['user-agent'];
     // generate a random unique id
     let uid = date.format(new Date(), 'YYYYMMDDHHmmssSSS' + "-u2b-dl");
     console.log("New Request @", date.format(new Date(), 'HH:mm:ss'));
-    console.log("IP: " + ip);
+    console.log("IP: " + user_ip);
     console.log("User Agent: " + ua);
     console.log("URL: " + url);
     console.log("Format: " + format);
@@ -134,7 +142,7 @@ app.post('/download', jsonParser, (req, res) => {
         let response = {
           status: 'success',
           message: 'Already downloaded',
-          url: 'http://127.0.0.1:3000/watch' + row.saved_url + '.mp4'
+          url: `http://${ip}:${port}/watch` + row.saved_url + '.mp4'
         }
         res.status(200).send(response);
         console.log("Already downloaded.")
@@ -142,7 +150,7 @@ app.post('/download', jsonParser, (req, res) => {
       }
       // If it hasn't been downloaded, add it to the database and proceed
       else if (row == undefined) {
-        db.run("INSERT INTO downloaded_videos (url, saved_url, format, date, ip, ua) VALUES (?, ?, ?, ?, ?, ?)", [url, uid, format, date.format(new Date(), 'YYYY-MM-DD HH:mm:ss'), ip, ua], (err) => {
+        db.run("INSERT INTO downloaded_videos (url, saved_url, format, date, ip, ua) VALUES (?, ?, ?, ?, ?, ?)", [url, uid, format, date.format(new Date(), 'YYYY-MM-DD HH:mm:ss'), user_ip, ua], (err) => {
           if (err) {
             console.error(err.message);
           }
@@ -155,7 +163,7 @@ app.post('/download', jsonParser, (req, res) => {
               let response = {
                 status: 'success',
                 message: 'Downloaded',
-                url: 'http://127.0.0.1:3000/watch' + uid + '.mp4'
+                url: `http://${ip}:${port}/watch` + uid + '.mp4'
               }
               res.status(200).send(response);
               console.log("Completed a download.");
@@ -168,12 +176,12 @@ app.post('/download', jsonParser, (req, res) => {
 })
 
 app.get('/watch:id', (req, res) => {
-    console.log(req.params.id);
+    console.log(req.params.id + " has been viewed by a user.")
     res.sendFile(__dirname + '/videos/video' + req.params.id);
 })
 
 app.listen(port, () => {
   console.log(`u2b-dl API server 0.1.0`)
   console.log(`\nServer started @ ${date.format(startup_time, 'HH:mm:ss')}`)
-  console.log(`http://127.0.0.1:${port}`)
+  console.log(`http://${ip}:${port}`)
 })
