@@ -8,3 +8,7 @@ Technologies used:
 - Express
 - Preact
 - Node
+
+## screenshot
+
+![screenshot](documentation/screenshot_mobile.png)
